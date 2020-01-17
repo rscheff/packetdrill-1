@@ -168,10 +168,23 @@ static int tcp_packet_to_string(FILE *s, struct packet *packet,
 		fputc('.', s);
 	if (packet->tcp->urg)
 		fputc('U', s);
-	if (packet->tcp->ece)
-		fputc('E', s);   /* ECN *E*cho sent (ECN) */
-	if (packet->tcp->cwr)
-		fputc('W', s);   /* Congestion *W*indow reduced (ECN) */
+	if (packet->flags & FLAG_PARSE_ACE) {
+		int ace = 0;
+		if (packet->tcp->ece)
+			ace |= 1;
+		if (packet->tcp->cwr)
+			ace |= 2;
+		if (packet->tcp->ae)
+			ace |= 4;
+		fputc('0' + ace, s);
+	} else {
+		if (packet->tcp->ece)
+			fputc('E', s);   /* ECN *E*cho sent (ECN) */
+		if (packet->tcp->cwr)
+			fputc('W', s);   /* Congestion *W*indow reduced (ECN) */
+		if (packet->tcp->ae)
+			fputc('A', s);   /* AccECN bit */
+	}
 
 	fprintf(s, " %u:%u(%u) ",
 		ntohl(packet->tcp->seq),
